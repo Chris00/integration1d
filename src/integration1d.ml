@@ -20,6 +20,16 @@
 
 open Printf
 
+(* Specialized min/max functions that deal correctly with NaNs
+   provided their first argument is not a NaN. *)
+let min_float (a: float) b =
+  assert(a = a);               (* [a] is not NaN *)
+  if b <= a (* && b not NaN *) then b else a
+
+let max_float (a:float) b =
+  assert(a = a);               (* [a] is not NaN *)
+  if b >= a (* && b not NaN *) then b else a
+
 
 (***********************************************************************
  *                 Elementary integration routines
@@ -35,7 +45,9 @@ type qk_result = {
 ;;
 
 let epsilon_float50 = epsilon_float *. 50.
-let small_resabs = min_float /. epsilon_float50
+let epsilon_float100 = epsilon_float *. 100.
+let min_float1000 = Pervasives.min_float *. 1000.
+let small_resabs = Pervasives.min_float /. epsilon_float50
 
 DEFINE INIT_GAUSS_ODD = 0.;;
 DEFINE INIT_GAUSS_EVEN(n2) = fc *. wg.(n2);;
@@ -76,8 +88,8 @@ DEFINE QK(n0, n1, n2, init_gauss, wg, xgk, wgk, fv1, fv2) =
   let mean = !res_kronrod *. 0.5 in
   let resasc = ref(wgk.(n0) *. abs_float(fc -. mean)) in
   for j = 0 to n0 - 1 do
-    Float.(resasc := !resasc + wgk.(j) * (abs(fv1.(j) - mean)
-                                          + abs(fv2.(j) - mean)))
+    resasc := !resasc +. wgk.(j) *. (abs_float(fv1.(j) -. mean)
+                                   +. abs_float(fv2.(j) -. mean))
   done;
   (* Scale by the width of the integration region. *)
   resabs := !resabs *. abs_hlgth;
@@ -85,12 +97,12 @@ DEFINE QK(n0, n1, n2, init_gauss, wg, xgk, wgk, fv1, fv2) =
   let abserr = abs_float((!res_kronrod -. !res_gauss) *. hlgth) in
   let abserr =
     if !resasc = 0. || abserr = 0. then abserr
-    else Float.(!resasc * min 1 ((200 * abserr / !resasc)**1.5)) in
+    else !resasc *. min_float 1. ((200. *. abserr /. !resasc)**1.5) in
   { result = !res_kronrod *. hlgth;
     resabs = !resabs;
     resasc = !resasc;
     abserr = (if !resabs <= small_resabs then abserr
-              else Float.(max (epsilon_float50 * !resabs) abserr))
+              else max_float abserr (epsilon_float50 *. !resabs))
   }
 ;;
 
@@ -544,6 +556,8 @@ DEFINE RESULT(last, msg_val) =
       msg = msg_val }
 ;;
 
+let too_small_epsrel = max_float epsilon_float50 0.5E-28
+
 let qag ?(limit=50) ?workspace:w integ =
   let w = match w with
     | None -> workspace integ limit
@@ -556,13 +570,20 @@ let qag ?(limit=50) ?workspace:w integ =
     | GAUSS51 -> qk51, (fun neval -> 102 * neval + 51)
     | GAUSS61 -> qk61, (fun neval -> 122 * neval + 61) in
 
-  fun ?(epsabs=1.49E-8) ?(epsrel=1.49E-8) f a b ->
-    if Float.(epsabs <= 0 && epsrel <= max (50 * epsilon_float) 0.5E-28) then
-      failwith "Integrate.qag: invalid epsabs or epsrel";
+  fun ?(epsabs=1.49E-8) ?(epsrel=1.49E-8) f (a: float) (b: float) ->
+    if epsabs <= 0. then invalid_arg "Integrate.qag: epsabs <= 0";
+    if epsabs <> epsabs then invalid_arg "Integrate.qag: epsabs cannot be NaN";
+    if epsrel <= too_small_epsrel then
+      invalid_arg "Integrate.qag: epsrel too small";
+    if epsrel <> epsrel then invalid_arg "Integrate.qag: epsrel cannot be NaN";
+    if a <> a then invalid_arg "Integrate.qag: the integration interval \
+                               left bound cannot be NaN";
+    if b <> b then invalid_arg "Integrate.qag: the integration interval \
+                               right bound cannot be NaN";
     (* First approximation to the integral *)
     let i = integ w.fv1 w.fv2 f a b in
     (* Test on accuracy *)
-    let errbnd = Float.(max epsabs (epsrel * abs i.result)) in
+    let errbnd = max_float epsabs (epsrel *. abs_float i.result) in
     if (i.abserr <= errbnd && i.abserr <> i.resasc) || i.abserr = 0. then
       { res = i.result;  err = i.abserr;  neval = compute_neval 0;  nsub = 1;
         msg = OK }
@@ -604,21 +625,21 @@ let qag ?(limit=50) ?workspace:w integ =
           errsum := !errsum +. abserr12 -. !errmax;
           area := !area +. area12 -. w.rlist.(!maxerr);
           if i1.resasc <> i1.abserr && i2.resasc <> i2.abserr then (
-            if Float.(abs(w.rlist.(!maxerr) - area12) <= 0.1E-4 * abs area12
-                      && abserr12 >= 0.99 * !errmax) then incr iroff1;
+            if abs_float(w.rlist.(!maxerr) -. area12) <= 0.1E-4 *. abs_float area12
+               && abserr12 >= 0.99 *. !errmax then incr iroff1;
             if last >= 10 && abserr12 > !errmax then incr iroff2;
           );
           w.rlist.(!maxerr) <- i1.result;
           w.rlist.(last) <- i2.result;
-          let errbnd = Float.(max epsabs (epsrel * abs !area)) in
+          let errbnd = max_float epsabs (epsrel *. abs_float !area) in
           if !errsum > errbnd then (
             (* Test for roundoff error and eventually set error flag. *)
             if !iroff1 >= 6 || !iroff2 >= 20 then
               raise(Result(RESULT(last, Roundoff)));
             (* Bad integrand behaviour at a point of the integration
                range (interval too small). *)
-            if Float.(max (abs ai) (abs bi) <= (1 + 100 * epsilon_float)
-                      * (abs mid + 1000 * min_float)) then
+            if max_float (abs_float ai) (abs_float bi)
+               <= (1. +. epsilon_float100) *. (abs_float mid +. min_float1000) then
               raise(Result(RESULT(last, Bad_integrand)));
           );
           (* Append the newly-created intervals to the list. *)

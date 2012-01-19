@@ -18,7 +18,7 @@ Library integration1d
   BuildTools: ocamlbuild
   Modules:    Integration1d
   # The module uses macros.  This is configured in _tags
-  BuildDepends:	pa_do
+  BuildDepends:	camlp4.macro
 
 Document API
   Title:           API reference for Integration1d
