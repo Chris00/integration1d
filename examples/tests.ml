@@ -1,5 +1,5 @@
 open Printf
-open Integration1d
+open Integration1D
 
 let pi = 4. *. atan(1.)
 

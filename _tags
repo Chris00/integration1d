@@ -11,4 +11,4 @@
 <examples/*.ml{,i}>: pkg_camlp4.macro
 # OASIS_STOP
 
-"src/integration1d.ml": syntax_camlp4o
+"src/integration1D.ml": syntax_camlp4o

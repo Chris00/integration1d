@@ -1,7 +1,7 @@
 #                                                               -*-conf-*-
 OASISFormat: 0.2
 Name:        integration1d
-Version:     0.1
+Version:     0.2
 Synopsis:    Integration of functions of one variable.
 Description: This is a binding to Quadpack.
 Authors:     Christophe Troestler <Christophe.Troestler@umons.ac.be>
@@ -16,7 +16,7 @@ Flag has_gsl
 Library integration1d
   Path:	      src
   BuildTools: ocamlbuild
-  Modules:    Integration1d
+  Modules:    Integration1D
   # The module uses macros.  This is configured in _tags
   BuildDepends:	camlp4.macro
 
