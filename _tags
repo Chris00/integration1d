@@ -1,0 +1,14 @@
+#								-*-conf-*-
+# OASIS_START
+# DO NOT EDIT (digest: b7a58fdc9d7c8303c12451ec816b90b7)
+# Library integration1d
+"src": include
+<src/*.ml{,i}>: pkg_pa_do
+# Executable tests
+"examples/tests.byte": use_integration1d
+"examples/tests.byte": pkg_pa_do
+<examples/*.ml{,i}>: use_integration1d
+<examples/*.ml{,i}>: pkg_pa_do
+# OASIS_STOP
+
+"src/integration1d.ml": syntax_camlp4o

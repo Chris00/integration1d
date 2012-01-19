@@ -1,0 +1,19 @@
+#							-*-conf-unix-*-
+*.tar.gz
+*.pdf
+_build
+src/META
+*.odocl
+*.data
+*.log
+*.mllib
+*.clib
+*.byte
+*.native
+API.docdir
+# OASIS generated:
+AUTHORS.txt
+INSTALL.txt
+README.txt
+myocamlbuild.ml
+setup.ml
