@@ -44,6 +44,8 @@ type qk_result = {
 }
 ;;
 
+exception Function_returns_NaN of float * string
+
 let epsilon_float50 = epsilon_float *. 50.
 let epsilon_float100 = epsilon_float *. 100.
 let min_float1000 = Pervasives.min_float *. 1000.
@@ -60,6 +62,8 @@ DEFINE QK(n0, n1, n2, init_gauss, wg, xgk, wgk, fv1, fv2) =
   (* Compute the kronrod approximation to the integral, and estimate
      the absolute error. *)
   let fc = f centr in
+  if (fc: float) <> fc then
+    raise(Function_returns_NaN(centr, string_of_float centr));
   let res_gauss = ref(init_gauss) in
   let res_kronrod = ref(fc *. wgk.(n0)) in
   let resabs = ref(abs_float !res_kronrod) in
