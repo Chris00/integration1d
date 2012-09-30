@@ -17,7 +17,7 @@ setup.data: setup.ml
 	ocaml setup.ml -configure --enable-has-gsl
 
 setup.ml: _oasis
-	oasis setup
+	oasis setup -setup-update dynamic
 
 doc install uninstall reinstall: all
 	ocaml setup.ml -$@
@@ -28,9 +28,9 @@ upload-doc: doc
 .PHONY: dist tar
 dist tar: setup.ml
 	mkdir -p $(DIR)
-	for f in $(DISTFILES); do \
-	  cp -r --parents $$f $(DIR); \
-	done
+	cp --parents -r $(DISTFILES) $(DIR)/
+# Generate a compilation files not depending on oasis:
+	cd $(DIR) && oasis setup
 	tar -zcvf $(TARBALL) $(DIR)
 	$(RM) -r $(DIR)
 
