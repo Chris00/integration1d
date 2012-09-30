@@ -30,6 +30,7 @@ let max_float (a:float) b =
   assert(a = a);               (* [a] is not NaN *)
   if b >= a (* && b not NaN *) then b else a
 
+DEFINE IS_NOT_FINITE (x) = not(neg_infinity < x && x < infinity);;
 
 (***********************************************************************
  *                 Elementary integration routines
@@ -44,7 +45,7 @@ type qk_result = {
 }
 ;;
 
-exception Function_returns_NaN of float * string
+exception Function_not_finite of float * string
 
 let epsilon_float50 = epsilon_float *. 50.
 let epsilon_float100 = epsilon_float *. 100.
@@ -56,22 +57,28 @@ DEFINE INIT_GAUSS_EVEN(n2) = fc *. wg.(n2);;
 (* n0 = n-1, n1 = (n-3)/2 and n2 = n/2 - 1.
    [fv1.(0 .. n0)] i.e. [dim fv1 = n] -- idem for [fv2]. *)
 DEFINE QK(n0, n1, n2, init_gauss, wg, xgk, wgk, fv1, fv2) =
-  let centr = 0.5 *. (a +. b) in
   let hlgth = 0.5 *. (b -. a) in        (* half length *)
+  let centr = a +. hlgth in
   let abs_hlgth = abs_float hlgth in
   (* Compute the kronrod approximation to the integral, and estimate
      the absolute error. *)
   let fc = f centr in
-  if (fc: float) <> fc then
-    raise(Function_returns_NaN(centr, string_of_float centr));
+  if IS_NOT_FINITE(fc) then
+    raise(Function_not_finite(centr, string_of_float centr));
   let res_gauss = ref(init_gauss) in
   let res_kronrod = ref(fc *. wgk.(n0)) in
   let resabs = ref(abs_float !res_kronrod) in
   for j = 0 to n1 do
     let jtw = j * 2 + 1 in
     let absc = hlgth *. xgk.(jtw) in
-    let fval1 = f(centr -. absc) in
-    let fval2 = f(centr +. absc) in
+    let val1 = centr -. absc in
+    let fval1 = f val1 in
+    if IS_NOT_FINITE(fval1) then
+      raise(Function_not_finite(val1, string_of_float val1));
+    let val2 = centr +. absc in
+    let fval2 = f val2 in
+    if IS_NOT_FINITE(fval2) then
+      raise(Function_not_finite(val2, string_of_float val2));
     fv1.(jtw) <- fval1;
     fv2.(jtw) <- fval2;
     let fsum = fval1 +. fval2 in
@@ -82,8 +89,14 @@ DEFINE QK(n0, n1, n2, init_gauss, wg, xgk, wgk, fv1, fv2) =
   for j = 0 to n2 do
     let jtw = j * 2 in
     let absc = hlgth *. xgk.(jtw) in
-    let fval1 = f(centr -. absc)
-    and fval2 = f(centr +. absc) in
+    let val1 = centr -. absc in
+    let fval1 = f val1 in
+    if IS_NOT_FINITE(fval1) then
+      raise(Function_not_finite(val1, string_of_float val1));
+    let val2 = centr +. absc in
+    let fval2 = f val2 in
+    if IS_NOT_FINITE(fval2) then
+      raise(Function_not_finite(val2, string_of_float val2));
     fv1.(jtw) <- fval1;
     fv2.(jtw) <- fval2;
     res_kronrod := !res_kronrod +. wgk.(jtw) *. (fval1 +. fval2);
@@ -93,7 +106,7 @@ DEFINE QK(n0, n1, n2, init_gauss, wg, xgk, wgk, fv1, fv2) =
   let resasc = ref(wgk.(n0) *. abs_float(fc -. mean)) in
   for j = 0 to n0 - 1 do
     resasc := !resasc +. wgk.(j) *. (abs_float(fv1.(j) -. mean)
-                                   +. abs_float(fv2.(j) -. mean))
+                                   +. abs_float(fv2.(j) -. mean));
   done;
   (* Scale by the width of the integration region. *)
   resabs := !resabs *. abs_hlgth;

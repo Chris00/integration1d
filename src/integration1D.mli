@@ -57,10 +57,11 @@ type result = {
   msg: reliability;
 }
 
-exception Function_returns_NaN of float * string
-(** [Function_returns_NaN(x, x_str)] is raised when the function
-    one seeks to integrate returns NaN at [x].  [x_str] is simply the
-    string representation of value of [x] to ease debugging. *)
+exception Function_not_finite of float * string
+(** [Function_not_finite(x, x_str)] is raised when the function one
+    seeks to integrate returns NaN, [infinity] or [neg_infinity] at [x].
+    [x_str] is simply the string representation of value of [x] to
+    ease debugging. *)
 
 type workspace
 (** Temporary memory used by the integration routines. *)
@@ -90,9 +91,9 @@ val qag : ?limit:int -> ?workspace:workspace -> integrator ->
       repeatedly as [integ f a b].
 
       @raise Failure if [epsabs <= 0 && epsrel <= max (50 * eps_float) 0.5E-28]
-      @raise Function_returns_NaN if the function [f] returns NaN at an
-                                  evaluation point.
-  *)
+      @raise Function_not_finite if the function [f] returns NaN or an
+                                 infinite value at an evaluation point.
+   *)
 
 
 
