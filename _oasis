@@ -1,7 +1,7 @@
 #                                                               -*-conf-*-
 OASISFormat: 0.3
 Name:        integration1d
-Version:     0.4
+Version:     0.4.1
 Synopsis:    Integration of functions of one variable.
 Description: Collection of integration routines inspired by QUADPACK.
   Pure OCaml code.
