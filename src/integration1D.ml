@@ -439,7 +439,7 @@ let qk61 fv1 fv2 f a b = (* n = 31 *)
 
 
 (***********************************************************************
- *                        Adaptative schemes
+ *                        Adaptive schemes
  ***********************************************************************)
 
 (* Names taken to be compatible with the GSL bindings. *)
@@ -514,7 +514,7 @@ let check_workspace integ limit w =
                   (string_of_integrator w.integ) (string_of_integrator integ));
   if Array.length w.alist < limit (* not need to check others because
                                      of the restricted way of creating
-                                     worksspaces *) then
+                                     workspaces *) then
     invalid_arg(sprintf "Integrate.qag: limit = %i exceeds the workspace size \
       = %i" limit (Array.length w.alist))
 ;;
