@@ -478,7 +478,7 @@ exception Result of result
 (* Names identical to the QUADPACK ones. *)
 type workspace = {
   integ: integrator; (* to enable checks *)
-  fv1: float array;
+  fv1: float array;  (* working space for the [qk15],... routines *)
   fv2: float array;
   alist: float array;
   blist: float array;
@@ -487,16 +487,15 @@ type workspace = {
   rlist: float array;
 }
 
-let dim_fv = function
-  | GAUSS15 -> 7 (* n - 1 *)
-  | GAUSS21 -> 10
-  | GAUSS31 -> 15
-  | GAUSS41 -> 20
-  | GAUSS51 -> 25
-  | GAUSS61 -> 30
-
+(* The only way to create workspaces from the interface. *)
 let workspace integ limit =
-  let dimfv = dim_fv integ in
+  let dimfv = match integ with
+    | GAUSS15 -> 7 (* n - 1 *)
+    | GAUSS21 -> 10
+    | GAUSS31 -> 15
+    | GAUSS41 -> 20
+    | GAUSS51 -> 25
+    | GAUSS61 -> 30 in
   { integ = integ;
     fv1 = Array.make dimfv 0.;
     fv2 = Array.make dimfv 0.;
