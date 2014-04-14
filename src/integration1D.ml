@@ -505,17 +505,19 @@ let workspace integ limit =
     iord  = Array.make limit 0;
     rlist = Array.make limit 0. }
 
-let check_workspace integ limit w =
+let check_workspace name integ limit w =
   (* FIXME: Enable use with other integrators as long as there is
      enough space? *)
   if w.integ <> integ then
-    invalid_arg(sprintf "Integrate.qag: workspace for %s used with %s"
-                  (string_of_integrator w.integ) (string_of_integrator integ));
+    invalid_arg(sprintf "Integration1D.%s: workspace for %s used with %s"
+                        name (string_of_integrator w.integ)
+                        (string_of_integrator integ));
   if Array.length w.alist < limit (* not need to check others because
                                      of the restricted way of creating
                                      workspaces *) then
-    invalid_arg(sprintf "Integrate.qag: limit = %i exceeds the workspace size \
-      = %i" limit (Array.length w.alist))
+    invalid_arg(sprintf "Integration1D.%s: limit = %i exceeds the \
+                         workspace size = %i"
+                        name limit (Array.length w.alist))
 ;;
 
 DEFINE QPSRT(limit, last, maxerr, errmax, elist, iord, nrmax) =
@@ -574,10 +576,28 @@ DEFINE RESULT(last, msg_val) =
 
 let too_small_epsrel = max_float epsilon_float50 0.5E-28
 
+let check_integration_params name ~(epsabs: float) ~(epsrel: float)
+                             (a: float) (b: float) =
+  if epsabs <= 0. then
+    invalid_arg(sprintf "Integration1D.%s: epsabs = %g <= 0" name epsabs);
+  if epsabs <> epsabs then
+    invalid_arg(sprintf "Integration1D.%s: epsabs cannot be NaN" name);
+  if epsrel <= too_small_epsrel then
+    invalid_arg(sprintf "Integration1D.%s: epsrel too small" name);
+  if epsrel <> epsrel then
+    invalid_arg(sprintf "Integration1D.%s: epsrel cannot be NaN" name);
+  if a <> a then
+    invalid_arg(sprintf "Integration1D.%s: the integration interval \
+                         left bound cannot be NaN" name);
+  if b <> b then
+    invalid_arg(sprintf "Integration1D.%s: the integration interval \
+                         right bound cannot be NaN" name)
+
+
 let qag ?(limit=50) ?workspace:w integ =
   let w = match w with
     | None -> workspace integ limit
-    | Some w -> check_workspace integ limit w; w in
+    | Some w -> check_workspace "qag" integ limit w; w in
   let integ, compute_neval = match integ with
     | GAUSS15 -> qk15, (fun neval -> 30 * neval + 15)
     | GAUSS21 -> qk21, (fun neval -> 42 * neval + 21) (* cst. * (2*neval+1) *)
@@ -587,15 +607,7 @@ let qag ?(limit=50) ?workspace:w integ =
     | GAUSS61 -> qk61, (fun neval -> 122 * neval + 61) in
 
   fun ?(epsabs=1.49E-8) ?(epsrel=1.49E-8) f (a: float) (b: float) ->
-    if epsabs <= 0. then invalid_arg "Integrate.qag: epsabs <= 0";
-    if epsabs <> epsabs then invalid_arg "Integrate.qag: epsabs cannot be NaN";
-    if epsrel <= too_small_epsrel then
-      invalid_arg "Integrate.qag: epsrel too small";
-    if epsrel <> epsrel then invalid_arg "Integrate.qag: epsrel cannot be NaN";
-    if a <> a then invalid_arg "Integrate.qag: the integration interval \
-                               left bound cannot be NaN";
-    if b <> b then invalid_arg "Integrate.qag: the integration interval \
-                               right bound cannot be NaN";
+    check_integration_params "qag" ~epsabs ~epsrel a b;
     (* First approximation to the integral *)
     let i = integ w.fv1 w.fv2 f a b in
     (* Test on accuracy *)
