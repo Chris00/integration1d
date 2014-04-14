@@ -596,21 +596,21 @@ let qag ?(limit=50) ?workspace:w integ =
     | GAUSS61 -> qk61, (fun neval -> 122 * neval + 61) in
 
   fun ?(epsabs=1.49E-8) ?(epsrel=1.49E-8) f (a: float) (b: float) ->
-    check_integration_params "qag" ~epsabs ~epsrel a b;
-    (* First approximation to the integral *)
-    let i = integ w.fv1 w.fv2 f a b in
-    (* Test on accuracy *)
-    let errbnd = max_float epsabs (epsrel *. abs_float i.result) in
-    if (i.abserr <= errbnd && i.abserr <> i.resasc) || i.abserr = 0. then
-      { res = i.result;  err = i.abserr;  neval = compute_neval 0;  nsub = 1;
-        msg = OK }
-    else if i.abserr <= epsilon_float50 *. i.resabs && i.abserr > errbnd then
-      { res = i.result;  err = i.abserr;  neval = compute_neval 0;  nsub = 1;
-        msg = Roundoff }
-    else if limit = 1 then
-      { res = i.result;  err = i.abserr;  neval = compute_neval 0;  nsub = 1;
-        msg = Limit }
-    else begin
+  check_integration_params "qag" ~epsabs ~epsrel a b;
+  (* First approximation to the integral *)
+  let i = integ w.fv1 w.fv2 f a b in
+  (* Test on accuracy *)
+  let errbnd = max_float epsabs (epsrel *. abs_float i.result) in
+  if (i.abserr <= errbnd && i.abserr <> i.resasc) || i.abserr = 0. then
+    { res = i.result;  err = i.abserr;  neval = compute_neval 0;  nsub = 1;
+      msg = OK }
+  else if i.abserr <= epsilon_float50 *. i.resabs && i.abserr > errbnd then
+    { res = i.result;  err = i.abserr;  neval = compute_neval 0;  nsub = 1;
+      msg = Roundoff }
+  else if limit = 1 then
+    { res = i.result;  err = i.abserr;  neval = compute_neval 0;  nsub = 1;
+      msg = Limit }
+  else begin
       (* Initialization of state *)
       w.alist.(0) <- a;
       w.blist.(0) <- b;
@@ -626,63 +626,64 @@ let qag ?(limit=50) ?workspace:w integ =
       and iroff1 = ref 0 (* roundoff of type 1 *)
       and iroff2 = ref 0 (* roundoff of type 2 *) in
       let last, msg_val =
-      try
-        for last = 1 to limit - 1 do
-          (* Bisect the subinterval with the largest error estimate. *)
-          let ai = w.alist.(!maxerr) in
-          let bi = w.blist.(!maxerr) in
-          let mid = 0.5 *. (ai +. bi) in
-          let i1 = integ w.fv1 w.fv2 f ai mid in
-          let i2 = integ w.fv1 w.fv2 f mid bi in
-          (* Improve previous approximations to integral and error and
+        try
+          for last = 1 to limit - 1 do
+            (* Bisect the subinterval with the largest error estimate. *)
+            let ai = w.alist.(!maxerr) in
+            let bi = w.blist.(!maxerr) in
+            let mid = 0.5 *. (ai +. bi) in
+            let i1 = integ w.fv1 w.fv2 f ai mid in
+            let i2 = integ w.fv1 w.fv2 f mid bi in
+            (* Improve previous approximations to integral and error and
              test for accuracy. *)
-          incr neval;
-          let area12 = i1.result +. i2.result
-          and abserr12 = i1.abserr +. i2.abserr in
-          errsum := !errsum +. abserr12 -. !errmax;
-          area := !area +. area12 -. w.rlist.(!maxerr);
-          if i1.resasc <> i1.abserr && i2.resasc <> i2.abserr then (
-            if abs_float(w.rlist.(!maxerr) -. area12) <= 0.1E-4 *. abs_float area12
-               && abserr12 >= 0.99 *. !errmax then incr iroff1;
-            if last >= 10 && abserr12 > !errmax then incr iroff2;
-          );
-          w.rlist.(!maxerr) <- i1.result;
-          w.rlist.(last) <- i2.result;
-          let errbnd = max_float epsabs (epsrel *. abs_float !area) in
-          if !errsum > errbnd then (
-            (* Test for roundoff error and eventually set error flag. *)
-            if !iroff1 >= 6 || !iroff2 >= 20 then
-              raise(Result(last, Roundoff));
-            (* Bad integrand behaviour at a point of the integration
+            incr neval;
+            let area12 = i1.result +. i2.result
+            and abserr12 = i1.abserr +. i2.abserr in
+            errsum := !errsum +. abserr12 -. !errmax;
+            area := !area +. area12 -. w.rlist.(!maxerr);
+            if i1.resasc <> i1.abserr && i2.resasc <> i2.abserr then (
+              if abs_float(w.rlist.(!maxerr) -. area12)
+                 <= 0.1E-4 *. abs_float area12
+                 && abserr12 >= 0.99 *. !errmax then incr iroff1;
+              if last >= 10 && abserr12 > !errmax then incr iroff2;
+            );
+            w.rlist.(!maxerr) <- i1.result;
+            w.rlist.(last) <- i2.result;
+            let errbnd = max_float epsabs (epsrel *. abs_float !area) in
+            if !errsum > errbnd then (
+              (* Test for roundoff error and eventually set error flag. *)
+              if !iroff1 >= 6 || !iroff2 >= 20 then
+                raise(Result(last, Roundoff));
+              (* Bad integrand behaviour at a point of the integration
                range (interval too small). *)
-            if max_float (abs_float ai) (abs_float bi)
-               <= epsilon_float100p1 *. (abs_float mid +. min_float1000) then
-              raise(Result(last, Bad_integrand));
-          );
-          (* Append the newly-created intervals to the list. *)
-          if i2.abserr <= i1.abserr then (
-            w.alist.(last) <- mid;
-            w.blist.(!maxerr) <- mid;
-            w.blist.(last) <- bi;
-            w.elist.(!maxerr) <- i1.abserr;
-            w.elist.(last) <- i2.abserr;
-          ) else (
-            w.alist.(!maxerr) <- mid;
-            w.alist.(last) <- ai;
-            w.blist.(last) <- mid;
-            w.rlist.(!maxerr) <- i2.result;
-            w.rlist.(last) <- i1.result;
-            w.elist.(!maxerr) <- i2.abserr;
-            w.elist.(last) <- i1.abserr;
-          );
-          (* Maintain the descending ordering in the list of error
+              if max_float (abs_float ai) (abs_float bi)
+                 <= epsilon_float100p1 *. (abs_float mid +. min_float1000) then
+                raise(Result(last, Bad_integrand));
+            );
+            (* Append the newly-created intervals to the list. *)
+            if i2.abserr <= i1.abserr then (
+              w.alist.(last) <- mid;
+              w.blist.(!maxerr) <- mid;
+              w.blist.(last) <- bi;
+              w.elist.(!maxerr) <- i1.abserr;
+              w.elist.(last) <- i2.abserr;
+            ) else (
+              w.alist.(!maxerr) <- mid;
+              w.alist.(last) <- ai;
+              w.blist.(last) <- mid;
+              w.rlist.(!maxerr) <- i2.result;
+              w.rlist.(last) <- i1.result;
+              w.elist.(!maxerr) <- i2.abserr;
+              w.elist.(last) <- i1.abserr;
+            );
+            (* Maintain the descending ordering in the list of error
              estimates and select the subinterval with the largest error
              estimate (to be bisected next). *)
-          QPSRT(limit, last, maxerr, errmax, w.elist, w.iord, nrmax);
-          if !errsum <= errbnd then raise(Result(last, OK));
-        done;
-        limit-1, Limit
-      with Result r -> r in
+            QPSRT(limit, last, maxerr, errmax, w.elist, w.iord, nrmax);
+            if !errsum <= errbnd then raise(Result(last, OK));
+          done;
+          limit-1, Limit
+        with Result r -> r in
       let result = ref 0. in
       for k = 0 to last do result := !result +. w.rlist.(k) done;
       { res = !result;
@@ -692,7 +693,6 @@ let qag ?(limit=50) ?workspace:w integ =
         msg = msg_val }
     end
 ;;
-
 
 let quags f a b =
   failwith "TBD"
