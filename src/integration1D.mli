@@ -15,7 +15,7 @@
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
    LICENSE for more details. *)
 
-(** Routines for numerical integration. *)
+(** Routines for one dimensional numerical integration. *)
 
 (** Choice of local integration rule: which Gauss-Kronrod pair is used. *)
 type integrator =
@@ -73,27 +73,30 @@ val workspace : integrator -> int -> workspace
 val qag : ?limit:int -> ?workspace:workspace -> integrator ->
   ?epsabs:float -> ?epsrel:float ->
   (float -> float) -> float -> float -> result
-  (** [qag integrator f a b] return an approximation [i] to the
-      integral [f] over the interval [(a,b)] hopefully satisfying
-      following claim for accuracy [abs(i - true_result) <= max epsabs
-      (epsrel*abs(i))].
+(** [qag integrator] returns function, [integ] so that [integ f a b]
+    is an approximation, [i], to the integral [f] over the interval
+    [(a,b)] hopefully satisfying following claim for accuracy [abs(i -
+    true_result) <= max epsabs (epsrel*abs(i))].
 
-      @param epsabs absolute accuracy requested (default [1.49E-8]).
-      @param epsrel relative accuracy requested (default [1.49E-8]).
-      @param limit gives an upper-bound on the number of sub-intervals
-      in the partition of (a,b); must satisfy [limit >= 1]. Default: [50].
+    Keywords: automatic integrator, general-purpose, integrand
+    examinator, globally adaptive, Gauss-Kronrod.
 
-      @param workspace Temporary memory used by the integration
-      routines.  It is recommended to allocate this memory outside
-      loops.  Default: new temporary memory is allocated as needed.  A
-      nice way of allocating temprary ressources once only is to use
-      partial evaluation: [let integ = qag integrator] and then use it
-      repeatedly as [integ f a b].
+    @param epsabs absolute accuracy requested (default [1.49E-8]).
+    @param epsrel relative accuracy requested (default [1.49E-8]).
+    @param limit gives an upper-bound on the number of sub-intervals
+    in the partition of (a,b); must satisfy [limit >= 1]. Default: [50].
 
-      @raise Failure if [epsabs <= 0 && epsrel <= max (50 * eps_float) 0.5E-28]
-      @raise Function_not_finite if the function [f] returns NaN or an
-                                 infinite value at an evaluation point.
-   *)
+    @param workspace Temporary memory used by the integration
+    routines.  It is recommended to allocate this memory outside
+    loops.  Default: new temporary memory is allocated as needed.  A
+    nice way of allocating temprary ressources once only is to use
+    partial evaluation: [let integ = qag integrator] and then use it
+    repeatedly as [integ f a b].
+
+    @raise Failure if [epsabs <= 0 && epsrel <= max (50 * eps_float) 0.5E-28]
+    @raise Function_not_finite if the function [f] returns NaN or an
+                               infinite value at an evaluation point.
+ *)
 
 
 
