@@ -49,6 +49,7 @@ exception Function_not_finite of float * string
 
 let epsilon_float50 = epsilon_float *. 50.
 let epsilon_float100 = epsilon_float *. 100.
+let epsilon_float100p1 = epsilon_float *. 100. +. 1.
 let min_float1000 = Pervasives.min_float *. 1000.
 let small_resabs = Pervasives.min_float /. epsilon_float50
 
@@ -473,8 +474,6 @@ type result = {
   msg: reliability;
 }
 
-exception Result of result
-
 (* Names identical to the QUADPACK ones. *)
 type workspace = {
   integ: integrator; (* to enable checks *)
@@ -563,17 +562,6 @@ DEFINE QPSRT(limit, last, maxerr, errmax, elist, iord, nrmax) =
   )
 ;;
 
-(* Inline and use a for-loop for efficiency *)
-DEFINE RESULT(last, msg_val) =
-    let result = ref 0. in
-    for k = 0 to last do result := !result +. w.rlist.(k) done;
-    { res = !result;
-      err = !errsum;
-      neval = compute_neval !neval;
-      nsub = last + 1;
-      msg = msg_val }
-;;
-
 let too_small_epsrel = max_float epsilon_float50 0.5E-28
 
 let check_integration_params name ~(epsabs: float) ~(epsrel: float)
@@ -593,6 +581,7 @@ let check_integration_params name ~(epsabs: float) ~(epsrel: float)
     invalid_arg(sprintf "Integration1D.%s: the integration interval \
                          right bound cannot be NaN" name)
 
+exception Result of ((* last *) int * reliability)
 
 let qag ?(limit=50) ?workspace:w integ =
   let w = match w with
@@ -615,8 +604,7 @@ let qag ?(limit=50) ?workspace:w integ =
     if (i.abserr <= errbnd && i.abserr <> i.resasc) || i.abserr = 0. then
       { res = i.result;  err = i.abserr;  neval = compute_neval 0;  nsub = 1;
         msg = OK }
-    else if i.abserr <= 50. *. epsilon_float *. i.resabs
-      && i.abserr > errbnd then
+    else if i.abserr <= epsilon_float50 *. i.resabs && i.abserr > errbnd then
       { res = i.result;  err = i.abserr;  neval = compute_neval 0;  nsub = 1;
         msg = Roundoff }
     else if limit = 1 then
@@ -637,6 +625,7 @@ let qag ?(limit=50) ?workspace:w integ =
       and nrmax = ref 0  (* maxerr = iord(nrmax) *)
       and iroff1 = ref 0 (* roundoff of type 1 *)
       and iroff2 = ref 0 (* roundoff of type 2 *) in
+      let last, msg_val =
       try
         for last = 1 to limit - 1 do
           (* Bisect the subinterval with the largest error estimate. *)
@@ -663,12 +652,12 @@ let qag ?(limit=50) ?workspace:w integ =
           if !errsum > errbnd then (
             (* Test for roundoff error and eventually set error flag. *)
             if !iroff1 >= 6 || !iroff2 >= 20 then
-              raise(Result(RESULT(last, Roundoff)));
+              raise(Result(last, Roundoff));
             (* Bad integrand behaviour at a point of the integration
                range (interval too small). *)
             if max_float (abs_float ai) (abs_float bi)
-               <= (1. +. epsilon_float100) *. (abs_float mid +. min_float1000) then
-              raise(Result(RESULT(last, Bad_integrand)));
+               <= epsilon_float100p1 *. (abs_float mid +. min_float1000) then
+              raise(Result(last, Bad_integrand));
           );
           (* Append the newly-created intervals to the list. *)
           if i2.abserr <= i1.abserr then (
@@ -690,10 +679,17 @@ let qag ?(limit=50) ?workspace:w integ =
              estimates and select the subinterval with the largest error
              estimate (to be bisected next). *)
           QPSRT(limit, last, maxerr, errmax, w.elist, w.iord, nrmax);
-          if !errsum <= errbnd then raise(Result(RESULT(last, OK)));
+          if !errsum <= errbnd then raise(Result(last, OK));
         done;
-        RESULT(limit-1, Limit)
-      with Result r -> r
+        limit-1, Limit
+      with Result r -> r in
+      let result = ref 0. in
+      for k = 0 to last do result := !result +. w.rlist.(k) done;
+      { res = !result;
+        err = !errsum;
+        neval = compute_neval !neval;
+        nsub = last + 1;
+        msg = msg_val }
     end
 ;;
 
@@ -774,5 +770,5 @@ let simp_adapt ?fh ?(tol=1E-6) ?hmin f a b =
 
 
 (* Local Variables: *)
-(* compile-command: "make -k .." *)
+(* compile-command: "make -k -C .." *)
 (* End: *)
