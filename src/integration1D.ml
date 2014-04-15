@@ -33,7 +33,7 @@ let max_float (a:float) b =
 DEFINE IS_NOT_FINITE (x) = not(neg_infinity < x && x < infinity);;
 
 (***********************************************************************
- *                 Elementary integration routines
+ *                  Elementary quadratures (Konrod)
  ***********************************************************************)
 
 type qk_result = {
@@ -45,7 +45,18 @@ type qk_result = {
 }
 ;;
 
-exception Function_not_finite of float * string
+exception Function_not_finite of float
+
+let () =
+  (* Install a custom printer (the default one does not print floats
+     which is very annoying for debugging).
+     CANVAS: http://caml.inria.fr/mantis/view.php?id=5040 *)
+  let printer = function
+    | Function_not_finite f ->
+       Some("Integration1D.Function_not_finite(" ^ string_of_float f ^ ")")
+    | _ -> None in
+  Printexc.register_printer printer
+
 
 let epsilon_float50 = epsilon_float *. 50.
 let epsilon_float100 = epsilon_float *. 100.
@@ -65,7 +76,7 @@ DEFINE QK(n0, n1, n2, init_gauss, wg, xgk, wgk, fv1, fv2) =
      the absolute error. *)
   let fc = f centr in
   if IS_NOT_FINITE(fc) then
-    raise(Function_not_finite(centr, string_of_float centr));
+    raise(Function_not_finite centr);
   let res_gauss = ref(init_gauss) in
   let res_kronrod = ref(fc *. wgk.(n0)) in
   let resabs = ref(abs_float !res_kronrod) in
@@ -75,11 +86,11 @@ DEFINE QK(n0, n1, n2, init_gauss, wg, xgk, wgk, fv1, fv2) =
     let val1 = centr -. absc in
     let fval1 = f val1 in
     if IS_NOT_FINITE(fval1) then
-      raise(Function_not_finite(val1, string_of_float val1));
+      raise(Function_not_finite val1);
     let val2 = centr +. absc in
     let fval2 = f val2 in
     if IS_NOT_FINITE(fval2) then
-      raise(Function_not_finite(val2, string_of_float val2));
+      raise(Function_not_finite val2);
     fv1.(jtw) <- fval1;
     fv2.(jtw) <- fval2;
     let fsum = fval1 +. fval2 in
@@ -93,11 +104,11 @@ DEFINE QK(n0, n1, n2, init_gauss, wg, xgk, wgk, fv1, fv2) =
     let val1 = centr -. absc in
     let fval1 = f val1 in
     if IS_NOT_FINITE(fval1) then
-      raise(Function_not_finite(val1, string_of_float val1));
+      raise(Function_not_finite val1);
     let val2 = centr +. absc in
     let fval2 = f val2 in
     if IS_NOT_FINITE(fval2) then
-      raise(Function_not_finite(val2, string_of_float val2));
+      raise(Function_not_finite val2);
     fv1.(jtw) <- fval1;
     fv2.(jtw) <- fval2;
     res_kronrod := !res_kronrod +. wgk.(jtw) *. (fval1 +. fval2);

@@ -57,11 +57,9 @@ type result = {
   msg: reliability;
 }
 
-exception Function_not_finite of float * string
-(** [Function_not_finite(x, x_str)] is raised when the function one
-    seeks to integrate returns NaN, [infinity] or [neg_infinity] at [x].
-    [x_str] is simply the string representation of value of [x] to
-    ease debugging. *)
+exception Function_not_finite of float
+(** [Function_not_finite(x)] is raised when the function one
+    seeks to integrate returns NaN, [infinity] or [neg_infinity] at [x].  *)
 
 type workspace
 (** Temporary memory used by the integration routines. *)
@@ -77,6 +75,9 @@ val qag : ?limit:int -> ?workspace:workspace -> integrator ->
     is an approximation, [i], to the integral [f] over the interval
     [(a,b)] hopefully satisfying following claim for accuracy [abs(i -
     true_result) <= max epsabs (epsrel*abs(i))].
+    BEWARE that [qag integrator] creates a workspace that will be used
+    for all calls, so you should not embed one in another or make them
+    in parallel.
 
     Keywords: automatic integrator, general-purpose, integrand
     examinator, globally adaptive, Gauss-Kronrod.
