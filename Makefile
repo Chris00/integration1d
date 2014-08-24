@@ -4,7 +4,7 @@ DIR = $(shell oasis query name)-$(shell oasis query version)
 TARBALL = $(DIR).tar.gz
 
 DISTFILES = AUTHORS.txt INSTALL.txt README.txt \
-  Makefile myocamlbuild.ml _oasis setup.ml _tags src/META \
+  Makefile myocamlbuild.ml _oasis _opam setup.ml _tags src/META \
   $(wildcard $(addprefix src/,*.ab *.ml *.mli *.clib *.mllib *.c *.h)) \
   $(wildcard examples/*.ml)
 
