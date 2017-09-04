@@ -1,6 +1,0 @@
-#								-*-conf-*-
-# OASIS_START
-# OASIS_STOP
-
-true: annot
-"src/integration1D.ml": syntax_camlp4o

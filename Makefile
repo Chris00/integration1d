@@ -1,44 +1,30 @@
 WEB = integration1d.forge.ocamlcore.org:/home/groups/integration1d/htdocs/
 
-DIR = $(shell oasis query name)-$(shell oasis query version)
-TARBALL = $(DIR).tar.gz
+TESTS=$(wildcard examples/*.ml)
 
-DISTFILES = AUTHORS.txt INSTALL.txt README.txt \
-  Makefile myocamlbuild.ml _oasis _opam setup.ml _tags src/META \
-  $(wildcard $(addprefix src/,*.ab *.ml *.mli *.clib *.mllib *.c *.h)) \
-  $(wildcard examples/*.ml)
+build:
+	jbuilder build @install $(TESTS:.ml=.exe) #--dev
 
-.PHONY: configure all byte native doc upload-doc install uninstall reinstall
-all byte native: setup.data
-	ocaml setup.ml -build
+tests: build
+	for t in $(TESTS:.ml=.exe); do \
+	  echo  "### Executing test $$t ###"; \
+	  ./_build/default/$$t; \
+	done
 
-configure: setup.data
-setup.data: setup.ml
-	ocaml setup.ml -configure --enable-has-gsl
+install uninstall:
+	jbuilder $@
 
-setup.ml: _oasis
-	oasis setup -setup-update dynamic
-
-doc install uninstall reinstall: all
-	ocaml setup.ml -$@
+doc:
+	sed -e 's/%%VERSION%%/$(PKGVERSION)/' src/moss.mli \
+	  > _build/default/src/moss.mli
+	jbuilder build @doc
+	echo '.def { background: #f0f0f0; }' >> _build/default/_doc/odoc.css
 
 upload-doc: doc
-	scp -C -p -r _build/API.docdir $(WEB)
+	scp -C -r _build/default/_doc/root1d/integration1d $(WEB)/doc
+	scp -C _build/default/_doc/odoc.css $(WEB)/
 
-.PHONY: dist tar
-dist tar: setup.ml
-	mkdir -p $(DIR)
-	cp --parents -r $(DISTFILES) $(DIR)/
-# Generate a compilation files not depending on oasis:
-	cd $(DIR) && oasis setup
-	tar -zcvf $(TARBALL) $(DIR)
-	$(RM) -r $(DIR)
+clean::
+	jbuilder clean
 
-.PHONY: clean distclean
-clean: setup.ml
-	ocaml setup.ml -clean
-	$(RM) $(TARBALL)
-
-distclean: setup.ml
-	ocaml setup.ml -distclean
-	$(RM) $(wildcard *.ba[0-9] *.bak *~ *.odocl)
+.PHONY: build tests install uninstall doc upload-doc clean
