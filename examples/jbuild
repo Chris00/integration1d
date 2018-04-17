@@ -1,7 +1,7 @@
 (jbuild_version 1)
 
 (executables
- ((names     (tests))
+ ((names     (tests Kahaner))
   (libraries (integration1d))))
 
 (alias
