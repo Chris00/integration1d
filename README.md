@@ -11,8 +11,8 @@ The easiest way of installing this library is to use [opam][]:
 
     opam install integration1d
 
-If you wish to compile it by hand, install [jbuilder][] and do
-`jbuilder build @install`.
+If you wish to compile it by hand, install [dune][] and do
+`dune build @install`.
 
 
 Documentation
@@ -23,4 +23,4 @@ module [Integration1D](src/integration1D.mli).
 
 
 [OPAM]: https://opam.ocaml.org/
-[jbuilder]: https://github.com/janestreet/jbuilder
+[dune]: https://github.com/ocaml/dune

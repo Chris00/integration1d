@@ -1,0 +1,7 @@
+(library
+ (name        integration1d)
+ (public_name integration1d)
+ (flags       "-w" "+27")
+ (synopsis "Integration of functions of one variable.")
+ (wrapped false)
+ (preprocess (action (run %{bin:camlp4of} %{input-file}))))

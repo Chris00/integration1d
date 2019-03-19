@@ -1,9 +1,7 @@
-WEB = integration1d.forge.ocamlcore.org:/home/groups/integration1d/htdocs/
-
 TESTS=$(wildcard examples/*.ml)
 
 build:
-	jbuilder build @install $(TESTS:.ml=.exe) #--dev
+	dune build @install $(TESTS:.ml=.exe)
 
 tests: build
 	for t in $(TESTS:.ml=.exe); do \
@@ -12,19 +10,14 @@ tests: build
 	done
 
 install uninstall:
-	jbuilder $@
+	dune $@
 
 doc:
-	sed -e 's/%%VERSION%%/$(PKGVERSION)/' src/moss.mli \
-	  > _build/default/src/moss.mli
-	jbuilder build @doc
-	echo '.def { background: #f0f0f0; }' >> _build/default/_doc/odoc.css
-
-upload-doc: doc
-	scp -C -r _build/default/_doc/root1d/integration1d $(WEB)/doc
-	scp -C _build/default/_doc/odoc.css $(WEB)/
+	dune build @doc
+	sed -e 's/%%VERSION%%/$(PKGVERSION)/' --in-place \
+	  _build/default/_doc/_html/integration1d/Integration1D/index.html
 
 clean::
-	jbuilder clean
+	dune clean
 
 .PHONY: build tests install uninstall doc upload-doc clean

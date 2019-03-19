@@ -8,13 +8,13 @@ dev-repo: "git+https://github.com/Chris00/integration1d.git"
 bug-reports: "https://github.com/Chris00/integration1d/issues"
 doc: "https://Chris00.github.io/integration1d/doc"
 build: [
-  ["jbuilder" "subst"] {pinned}
-  ["jbuilder" "build" "-p" name "-j" jobs]
-  ["jbuilder" "runtest" "-p" name "-j" jobs] {with-test}
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "runtest" "-p" name "-j" jobs] {with-test}
 ]
 depends: [
   "ocaml"
-  "jbuilder" {build}
+  "dune" {build}
   "camlp4" {build}
 ]
 synopsis: "Collection of 1D numerical integration routines"
