@@ -30,7 +30,7 @@ let max_float (a:float) b =
   assert(a = a);               (* [a] is not NaN *)
   if b >= a (* && b not NaN *) then b else a
 
-DEFINE IS_NOT_FINITE (x) = not(neg_infinity < x && x < infinity);;
+let[@inline] is_not_finite x = not(neg_infinity < x && x < infinity)
 
 (***********************************************************************
  *                  Elementary quadratures (Konrod)
@@ -64,74 +64,74 @@ let epsilon_float100p1 = epsilon_float *. 100. +. 1.
 let min_float1000 = Pervasives.min_float *. 1000.
 let small_resabs = Pervasives.min_float /. epsilon_float50
 
-DEFINE INIT_GAUSS_ODD = 0.;;
-DEFINE INIT_GAUSS_EVEN(n2) = fc *. wg.(n2);;
+#define INIT_GAUSS_ODD 0.
+#define INIT_GAUSS_EVEN(n2) fc *. wg.(n2)
 (* n0 = n-1, n1 = (n-3)/2 and n2 = n/2 - 1.
    [fv1.(0 .. n0)] i.e. [dim fv1 = n] -- idem for [fv2]. *)
-DEFINE QK(n0, n1, n2, init_gauss, wg, xgk, wgk, fv1, fv2) =
-  let hlgth = 0.5 *. (b -. a) in        (* half length *)
-  let centr = a +. hlgth in
-  let abs_hlgth = abs_float hlgth in
+#define QK(n0, n1, n2, init_gauss, wg, xgk, wgk, fv1, fv2)             \
+  let hlgth = 0.5 *. (b -. a) in        (* half length *)               \
+  let centr = a +. hlgth in                                            \
+  let abs_hlgth = abs_float hlgth in                                   \
   (* Compute the kronrod approximation to the integral, and estimate
-     the absolute error. *)
-  let fc = f centr in
-  if IS_NOT_FINITE(fc) then
-    raise(Function_not_finite centr);
-  let res_gauss = ref(init_gauss) in
-  let res_kronrod = ref(fc *. wgk.(n0)) in
-  let resabs = ref(abs_float !res_kronrod) in
-  for j = 0 to n1 do
-    let jtw = j * 2 + 1 in
-    let absc = hlgth *. xgk.(jtw) in
-    let val1 = centr -. absc in
-    let fval1 = f val1 in
-    if IS_NOT_FINITE(fval1) then
-      raise(Function_not_finite val1);
-    let val2 = centr +. absc in
-    let fval2 = f val2 in
-    if IS_NOT_FINITE(fval2) then
-      raise(Function_not_finite val2);
-    fv1.(jtw) <- fval1;
-    fv2.(jtw) <- fval2;
-    let fsum = fval1 +. fval2 in
-    res_gauss := !res_gauss +. wg.(j) *. fsum;
-    res_kronrod := !res_kronrod +. wgk.(jtw) *. fsum;
-    resabs := !resabs +. wgk.(jtw) *. (abs_float fval1 +. abs_float fval2);
-  done;
-  for j = 0 to n2 do
-    let jtw = j * 2 in
-    let absc = hlgth *. xgk.(jtw) in
-    let val1 = centr -. absc in
-    let fval1 = f val1 in
-    if IS_NOT_FINITE(fval1) then
-      raise(Function_not_finite val1);
-    let val2 = centr +. absc in
-    let fval2 = f val2 in
-    if IS_NOT_FINITE(fval2) then
-      raise(Function_not_finite val2);
-    fv1.(jtw) <- fval1;
-    fv2.(jtw) <- fval2;
-    res_kronrod := !res_kronrod +. wgk.(jtw) *. (fval1 +. fval2);
-    resabs := !resabs +. wgk.(jtw) *. (abs_float fval1 +. abs_float fval2)
-  done;
-  let mean = !res_kronrod *. 0.5 in
-  let resasc = ref(wgk.(n0) *. abs_float(fc -. mean)) in
-  for j = 0 to n0 - 1 do
-    resasc := !resasc +. wgk.(j) *. (abs_float(fv1.(j) -. mean)
-                                   +. abs_float(fv2.(j) -. mean));
-  done;
-  (* Scale by the width of the integration region. *)
-  resabs := !resabs *. abs_hlgth;
-  resasc := !resasc *. abs_hlgth;
-  let abserr = abs_float((!res_kronrod -. !res_gauss) *. hlgth) in
-  let abserr =
-    if !resasc = 0. || abserr = 0. then abserr
-    else !resasc *. min_float 1. ((200. *. abserr /. !resasc)**1.5) in
-  { result = !res_kronrod *. hlgth;
-    resabs = !resabs;
-    resasc = !resasc;
-    abserr = (if !resabs <= small_resabs then abserr
-              else max_float abserr (epsilon_float50 *. !resabs))
+     the absolute error. *)                                            \
+  let fc = f centr in                                                  \
+  if is_not_finite(fc) then                                            \
+    raise(Function_not_finite centr);                                  \
+   let res_gauss = ref(init_gauss) in                                  \
+   let res_kronrod = ref(fc *. wgk.(n0)) in                             \
+   let resabs = ref(abs_float !res_kronrod) in                         \
+   for j = 0 to n1 do                                                  \
+    let jtw = j * 2 + 1 in                                             \
+    let absc = hlgth *. xgk.(jtw) in                                    \
+    let val1 = centr -. absc in                                        \
+    let fval1 = f val1 in                                              \
+    if is_not_finite(fval1) then                                       \
+     raise(Function_not_finite val1);                                  \
+    let val2 = centr +. absc in                                        \
+    let fval2 = f val2 in                                              \
+    if is_not_finite(fval2) then                                       \
+      raise(Function_not_finite val2);                                 \
+    fv1.(jtw) <- fval1;                                                 \
+    fv2.(jtw) <- fval2;                                                 \
+    let fsum = fval1 +. fval2 in                                       \
+    res_gauss := !res_gauss +. wg.(j) *. fsum;                          \
+    res_kronrod := !res_kronrod +. wgk.(jtw) *. fsum;                   \
+    resabs := !resabs +. wgk.(jtw) *. (abs_float fval1 +. abs_float fval2); \
+  done;                                                                \
+  for j = 0 to n2 do                                                   \
+    let jtw = j * 2 in                                                 \
+    let absc = hlgth *. xgk.(jtw) in                                    \
+    let val1 = centr -. absc in                                        \
+    let fval1 = f val1 in                                              \
+    if is_not_finite(fval1) then                                       \
+      raise(Function_not_finite val1);                                 \
+    let val2 = centr +. absc in                                        \
+    let fval2 = f val2 in                                              \
+    if is_not_finite(fval2) then                                       \
+      raise(Function_not_finite val2);                                 \
+    fv1.(jtw) <- fval1;                                                 \
+    fv2.(jtw) <- fval2;                                                 \
+    res_kronrod := !res_kronrod +. wgk.(jtw) *. (fval1 +. fval2);        \
+    resabs := !resabs +. wgk.(jtw) *. (abs_float fval1 +. abs_float fval2) \
+  done;                                                                \
+  let mean = !res_kronrod *. 0.5 in                                     \
+  let resasc = ref(wgk.(n0) *. abs_float(fc -. mean)) in                 \
+  for j = 0 to n0 - 1 do                                               \
+    resasc := !resasc +. wgk.(j) *. (abs_float(fv1.(j) -. mean)          \
+                                   +. abs_float(fv2.(j) -. mean));      \
+  done;                                                                \
+  (* Scale by the width of the integration region. *)                  \
+  resabs := !resabs *. abs_hlgth;                                       \
+  resasc := !resasc *. abs_hlgth;                                       \
+  let abserr = abs_float((!res_kronrod -. !res_gauss) *. hlgth) in      \
+  let abserr =                                                         \
+    if !resasc = 0. || abserr = 0. then abserr                          \
+    else !resasc *. min_float 1. ((200. *. abserr /. !resasc)**1.5) in    \
+  { result = !res_kronrod *. hlgth;                                     \
+    resabs = !resabs;                                                  \
+    resasc = !resasc;                                                  \
+    abserr = (if !resabs <= small_resabs then abserr                    \
+              else max_float abserr (epsilon_float50 *. !resabs))       \
   }
 ;;
 
@@ -530,46 +530,46 @@ let check_workspace name integ limit w =
                         name limit (Array.length w.alist))
 ;;
 
-DEFINE QPSRT(limit, last, maxerr, errmax, elist, iord, nrmax) =
-  if last < 2 then (
-    iord.(0) <- 0;
-    iord.(1) <- 1;
-    (* maxerr := iord.(!nrmax); (* !nrmax=0 => !maxerr = 0 = iord.(0) *) *)
-    errmax := elist.(0) (* elist.(!maxerr) may have changed since init. *)
-  ) else (
-    (* This part of the routine is only executed if, due to a
-       difficult integrand, subdivision increased the error estimate.
-       In the normal case the insert procedure should start after the
-       [nrmax]-th largest error estimate. *)
-    errmax := elist.(!maxerr);
-    (* FIXME: nrmax = 0 always (why do they do this?) *)
-    while !nrmax > 0 && !errmax > elist.(iord.(!nrmax-1)) do
-      iord.(!nrmax) <- iord.(!nrmax-1);
-      decr nrmax;
-    done;
-    (* Compute the number of elements in the list to be maintained in
-       descending order.  This number depends on the number of
-       subdivisions still allowed. *)
-    let jupbn = if last >= limit/2 + 2 then limit+1-last else last in
-    let errmin = elist.(last) (* save smaller sub-interval error *) in
-    (* Insert [errmax] by traversing the list top-down, starting
-       comparison from the element [elist.(iord.(!nrmax+1))]. *)
-    let i = ref(!nrmax + 1) in
-    while !i < jupbn && !errmax < elist.(iord.(!i)) do
-      iord.(!i-1) <- iord.(!i);
-      incr i;
-    done;
-    (* Insert [errmin] by traversing the list bottom-up. *)
-    iord.(!i-1) <- !maxerr;
-    let k = ref(jupbn - 1) in
-    let i_1 = !i - 1 in
-    while !k > i_1 && errmin >= elist.(iord.(!k)) do
-      iord.(!k+1) <- iord.(!k);
-      decr k;
-    done;
-    iord.(!k+1) <- last;
-    maxerr := iord.(!nrmax);
-    errmax := elist.(!maxerr)
+#define QPSRT(limit, last, maxerr, errmax, elist, iord, nrmax)          \
+  if last < 2 then (                                                    \
+    iord.(0) <- 0;                                                       \
+    iord.(1) <- 1;                                                       \
+    (* maxerr := iord.(!nrmax); (* !nrmax=0 => !maxerr = 0 = iord.(0) *) *) \
+    errmax := elist.(0) (* elist.(!maxerr) may have changed since init. *)  \
+  ) else (                                                              \
+    (* This part of the routine is only executed if, due to a           \
+       difficult integrand, subdivision increased the error estimate.   \
+       In the normal case the insert procedure should start after the   \
+       [nrmax]-th largest error estimate. *)                            \
+    errmax := elist.(!maxerr);                                          \
+    (* FIXME: nrmax = 0 always (why do they do this?) *)                \
+    while !nrmax > 0 && !errmax > elist.(iord.(!nrmax-1)) do             \
+      iord.(!nrmax) <- iord.(!nrmax-1);                                  \
+      decr nrmax;                                                       \
+    done;                                                               \
+    (* Compute the number of elements in the list to be maintained in   \
+       descending order.  This number depends on the number of          \
+       subdivisions still allowed. *)                                   \
+    let jupbn = if last >= limit/2 + 2 then limit+1-last else last in    \
+    let errmin = elist.(last) (* save smaller sub-interval error *) in  \
+    (* Insert [errmax] by traversing the list top-down, starting        \
+       comparison from the element [elist.(iord.(!nrmax+1))]. *)        \
+    let i = ref(!nrmax + 1) in                                          \
+    while !i < jupbn && !errmax < elist.(iord.(!i)) do                   \
+      iord.(!i-1) <- iord.(!i);                                          \
+      incr i;                                                           \
+    done;                                                               \
+    (* Insert [errmin] by traversing the list bottom-up. *)             \
+    iord.(!i-1) <- !maxerr;                                              \
+    let k = ref(jupbn - 1) in                                           \
+    let i_1 = !i - 1 in                                                 \
+    while !k > i_1 && errmin >= elist.(iord.(!k)) do                      \
+      iord.(!k+1) <- iord.(!k);                                          \
+      decr k;                                                           \
+    done;                                                               \
+    iord.(!k+1) <- last;                                                 \
+    maxerr := iord.(!nrmax);                                            \
+    errmax := elist.(!maxerr)                                           \
   )
 ;;
 
