@@ -18,3 +18,5 @@ depends: [
   "cppo" {build}
 ]
 synopsis: "Collection of 1D numerical integration routines"
+description: """
+One dimensional integration routines modeled after QUADPACK."""
