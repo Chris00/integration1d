@@ -571,7 +571,7 @@ let check_workspace name integ limit w =
     maxerr := iord.(!nrmax);                                            \
     errmax := elist.(!maxerr)                                           \
   )
-;;
+
 
 let too_small_epsrel = max_float epsilon_float50 0.5E-28
 
