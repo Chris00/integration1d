@@ -20,6 +20,12 @@
 
 open Printf
 
+let epsilon_float50 = epsilon_float *. 50.
+let epsilon_float100 = epsilon_float *. 100.
+let epsilon_float100p1 = epsilon_float *. 100. +. 1.
+let min_float1000 = min_float *. 1000.
+let small_resabs = min_float /. epsilon_float50
+
 (* Specialized min/max functions that deal correctly with NaNs
    provided their first argument is not a NaN. *)
 let min_float (a: float) b =
@@ -57,12 +63,6 @@ let () =
     | _ -> None in
   Printexc.register_printer printer
 
-
-let epsilon_float50 = epsilon_float *. 50.
-let epsilon_float100 = epsilon_float *. 100.
-let epsilon_float100p1 = epsilon_float *. 100. +. 1.
-let min_float1000 = Pervasives.min_float *. 1000.
-let small_resabs = Pervasives.min_float /. epsilon_float50
 
 #define INIT_GAUSS_ODD 0.
 #define INIT_GAUSS_EVEN(n2) fc *. wg.(n2)
