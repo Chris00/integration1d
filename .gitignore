@@ -4,3 +4,4 @@ TODO
 biblio/
 .merlin
 *.install
+*.tgz
