@@ -1,3 +1,10 @@
+0.5.1 2019-03-19
+----------------
+
+- Replace the deprecated Camlp4 by cppo.
+- Use `dune` to compile.
+- Upgrade to OPAM 2.
+
 0.5 2018-04-17
 --------------
 
