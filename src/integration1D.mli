@@ -71,13 +71,13 @@ val workspace : integrator -> int -> workspace
 val qag : ?limit:int -> ?workspace:workspace -> integrator ->
   ?epsabs:float -> ?epsrel:float ->
   (float -> float) -> float -> float -> result
-(** [qag integrator] returns function, [integ] so that [integ f a b]
+(** [qag integrator] returns a function [integ] so that [integ f a b]
     is an approximation, [i], to the integral [f] over the interval
     [(a,b)] hopefully satisfying following claim for accuracy [abs(i -
     true_result) <= max epsabs (epsrel*abs(i))].
-    BEWARE that [qag integrator] creates a workspace that will be used
-    for all calls, so you should not embed one in another or make them
-    in parallel.
+    ⚠ BEWARE that [qag integrator] creates a workspace that will be
+    used for all calls of [integ], so you should not call [integ]
+    inside [f] or call the same [integ] in parallel.
 
     Keywords: automatic integrator, general-purpose, integrand
     examinator, globally adaptive, Gauss-Kronrod.
